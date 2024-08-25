@@ -8,54 +8,54 @@ import configparser
 class Pseudo:
 
     # Use this constructor for config file input, remove if not to be used
-    def __init__(self):
+    def __init__(self, host:str = "localhost", port:int = 3306, user:str = "root", 
+                 password:str = "Password@123", database:str = "db", use_config = False):
         """
         Class for executing basic CRUD Operations by initializing a database 
         connection and cursor for CRUD operations
-        """
 
-        config = configparser.ConfigParser()
-        config.read("config.ini")
-
-        self.database = config["mysql"]["database"]
-
-        try:
-            self.connection = mysql.connector.connect(
-                host = config["mysql"]["host"],
-                port = config["mysql"]["port"],
-                user = config["mysql"]["user"],
-                password = config["mysql"]["password"],
-                database = self.database
-            )
-
-            print(f" SUCCESFULLY CONNECTED TO DATABASE {self.database}\n")
-            self.cursor = self.connection.cursor()
-
-        except mysql.connector.errors.ProgrammingError:
-            raise Exception("ERROR: INVALID PARAMETERS PROVIDED, Make Sure correct parameters are given")
-
-    # # # Use this constructor for hard-coded intials, remove if not to be used
-    # def __init__(self,host: str,port: int,usr: str,pswd: str,db: str):
-    #     """
-    #     Class for executing basic CRUD Operations by
-    #     initializing a database connection and cursor for CRUD operations
-    #     """
-
-    #     self.database = db      
+        To use hard-coded credentials, set use_config to False and pass valid credentials as parameters to class
         
-    #     try:
-    #         self.connection = mysql.connector.connect(
-    #             host = host,
-    #             port = port,
-    #             user = usr,
-    #             password = pswd,
-    #             database = self.database
-    #         )
+        To use config file, set use_config to True
+        """
+        if use_config == True:
+            config = configparser.ConfigParser()
+            config.read("config.ini")
 
-    #         print(f" SUCCESFULLY CONNECTED TO DATABASE {self.database}\n")
-    #         self.cursor = self.connection.cursor()
-    #     except mysql.connector.errors.ProgrammingError:
-    #         raise Exception("ERROR: INVALID PARAMETERS PROVIDED, Make Sure correct parameters are given")
+            try:
+                self.database = config["mysql"]["database"]
+
+                self.connection = mysql.connector.connect(
+                        host = config["mysql"]["host"],
+                        port = config["mysql"]["port"],
+                        user = config["mysql"]["user"],
+                        password = config["mysql"]["password"],
+                        database = self.database
+                    )
+
+                print(f" SUCCESFULLY CONNECTED TO DATABASE {self.database}\n")
+                self.cursor = self.connection.cursor()
+
+            except KeyError:
+                raise Exception("ERROR: Check if your config file is named as 'config.ini', and section under it is given as [mysql]")
+            except mysql.connector.errors.ProgrammingError:
+                raise Exception("ERROR: INVALID PARAMETERS PROVIDED, Make Sure correct parameters are given")
+        else:
+            try:
+                self.database = database
+                
+                self.connection = mysql.connector.connect(
+                    host = host,
+                    port = port,
+                    user = user,
+                    password = password,
+                    database = self.database
+                )
+
+                print(f" SUCCESFULLY CONNECTED TO DATABASE {self.database}\n")
+                self.cursor = self.connection.cursor()
+            except mysql.connector.errors.ProgrammingError:
+                raise Exception("ERROR: INVALID PARAMETERS PROVIDED, Make Sure correct parameters are given")            
 
     def show_table_names(self):
         """Get all table names in given database"""
@@ -188,12 +188,12 @@ if __name__ == "__main__":
     #Creating a new object, which sets a connection to a specified database
 
     #USE THIS IF USING HARD-CODED CREDENTIALS
-    #Replace following with valid credentials
-    host,port,user,password,database = "localhost",3306,"root","123","arka_db" 
-    tester = Pseudo(host,port,user,password,database)
-    
+    #Replace underscores with valid credentials
+    # host,port,user,password,database = "_",_,"_","_","_" 
+    # tester = Pseudo(host,port,user,password,database)
+
     #USE THIS IF USING CONFIG FILE
-    # tester = Pseudo()
+    tester = Pseudo(use_config=True)
 
     #Shows the tables in specified database
     tester.show_table_names() 
