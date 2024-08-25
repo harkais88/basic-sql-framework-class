@@ -3,52 +3,59 @@
 # in a new config.ini file or follow instructions below for hard-coded initials
 
 import mysql.connector
-# import configparser
+import configparser
 
 class Pseudo:
-    """Class for executing basic CRUD Operations"""
 
     # Use this constructor for config file input, remove if not to be used
-    # def __init__(self):
-    #     """Class for executing basic CRUD operations"""
+    def __init__(self):
+        """
+        Class for executing basic CRUD Operations by initializing a database 
+        connection and cursor for CRUD operations
+        """
 
-    #     config = configparser.ConfigParser()
-    #     config.read("config.ini")
+        config = configparser.ConfigParser()
+        config.read("config.ini")
 
-    #     self.database = config["mysql"]["database"]
+        self.database = config["mysql"]["database"]
 
-    #     try:
-    #         self.connection = mysql.connector.connect(
-    #             host = config["mysql"]["host"],
-    #             port = config["mysql"]["port"],
-    #             user = config["mysql"]["user"],
-    #             password = config["mysql"]["password"],
-    #             database = self.database
-    #         )
-
-    #         print(f" SUCCESFULLY CONNECTED TO DATABASE {self.database}\n")
-    #         self.cursor = self.connection.cursor()
-
-    #     except mysql.connector.errors.ProgrammingError:
-    #         raise Exception("ERROR: INVALID PARAMETERS PROVIDED, Make Sure correct parameters are given")
-
-    # # Use this constructor for hard-coded intials, remove if not to be used
-    def __init__(self,host,port,usr,pswd,db):
-        self.database = db      
-        
         try:
             self.connection = mysql.connector.connect(
-                host = host,
-                port = port,
-                user = usr,
-                password = pswd,
+                host = config["mysql"]["host"],
+                port = config["mysql"]["port"],
+                user = config["mysql"]["user"],
+                password = config["mysql"]["password"],
                 database = self.database
             )
 
             print(f" SUCCESFULLY CONNECTED TO DATABASE {self.database}\n")
             self.cursor = self.connection.cursor()
+
         except mysql.connector.errors.ProgrammingError:
             raise Exception("ERROR: INVALID PARAMETERS PROVIDED, Make Sure correct parameters are given")
+
+    # # # Use this constructor for hard-coded intials, remove if not to be used
+    # def __init__(self,host: str,port: int,usr: str,pswd: str,db: str):
+    #     """
+    #     Class for executing basic CRUD Operations by
+    #     initializing a database connection and cursor for CRUD operations
+    #     """
+
+    #     self.database = db      
+        
+    #     try:
+    #         self.connection = mysql.connector.connect(
+    #             host = host,
+    #             port = port,
+    #             user = usr,
+    #             password = pswd,
+    #             database = self.database
+    #         )
+
+    #         print(f" SUCCESFULLY CONNECTED TO DATABASE {self.database}\n")
+    #         self.cursor = self.connection.cursor()
+    #     except mysql.connector.errors.ProgrammingError:
+    #         raise Exception("ERROR: INVALID PARAMETERS PROVIDED, Make Sure correct parameters are given")
 
     def show_table_names(self):
         """Get all table names in given database"""
@@ -142,7 +149,7 @@ class Pseudo:
         except KeyError:
             print(f" ERROR: INVALID COLUMN NAME(S) PROVIDED IN INPUT {value}")
         except mysql.connector.errors.ProgrammingError:
-            print(f"ERROR: POSSIBLE SYNTAX ERROR, MAKE SURE TABLE NAME AND VALUES ARE CORRECT")
+            print(f" ERROR: POSSIBLE SYNTAX ERROR, MAKE SURE TABLE NAME AND VALUES ARE CORRECT")
         print()
 
     def get(self, table: str):
@@ -161,11 +168,6 @@ class Pseudo:
 
         print()
 
-    # NOTE: FACING REFERENCE ERROR HERE
-    # def __del__(self):
-    #     self.cursor.close()
-    #     self.connection.close()
-
     def custom_query(self,query: str):
         """Runs SQL query"""
         try:
@@ -175,12 +177,19 @@ class Pseudo:
         except:
             print("ERROR: INVALID QUERY")
 
+    def close(self):
+        """Terminates Database Connection"""
+
+        if self.cursor: self.cursor.close();
+        if self.connection: self.connection.close();
+        print(" CONNECTION SUCCESSFULLY CLOSED")
+
 if __name__ == "__main__":
     #Creating a new object, which sets a connection to a specified database
 
     #USE THIS IF USING HARD-CODED CREDENTIALS
     #Replace following with valid credentials
-    host,port,user,password,database = "localhost",3306,"root","Password@123","arka_db" 
+    host,port,user,password,database = "localhost",3306,"root","123","arka_db" 
     tester = Pseudo(host,port,user,password,database)
     
     #USE THIS IF USING CONFIG FILE
@@ -211,3 +220,6 @@ if __name__ == "__main__":
 
     #Dropping Table
     tester.drop('demo')
+
+    #Closing Connection
+    tester.close()
