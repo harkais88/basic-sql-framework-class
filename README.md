@@ -21,6 +21,7 @@ To create a class that can perform very basic CRUD operations
         <li>DROP</li>
         <li>INSERT</li>
         <li>SELECT</li>
+        <li>DELETE</li>
     </ul>
 
 <h3>Additional Operations</h3>
