@@ -83,21 +83,6 @@ class Pseudo:
     def create(self, table: str, cols: dict):
         """Create a table inside database"""
 
-        # Following query specific only to MySQL
-        # query = f"SHOW TABLES LIKE '%{table}%'"
-        # self.cursor.execute(query)
-        
-        # if len(self.cursor.fetchall()) == 0:
-        #     col_query = ""
-        #     for key,value in cols.items(): col_query += f"{key} {value},";
-        #     col_query = col_query[:len(col_query)-1]
-
-        #     query = f"CREATE TABLE {table} ({col_query});"
-        #     self.cursor.execute(query)
-        #     self.connection.commit()
-        # else:
-        #     print(f"ERROR: TABLE WITH NAME {table} ALREADY EXISTS IN DATABASE {self.database}")
-
         try:
             col_query = ""
             for key,value in cols.items(): col_query += f"{key} {value},";
@@ -165,7 +150,6 @@ class Pseudo:
             for row in results: print(" "+"\t".join([str(ele) for ele in row]));
         except mysql.connector.errors.ProgrammingError:
             print(f" ERROR: TABLE {table} NOT FOUND IN DATABASE {self.database}")
-
         print()
 
     def custom_query(self,query: str):
