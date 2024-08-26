@@ -107,6 +107,8 @@ class Pseudo:
             print(f" TABLE {table} REMOVED FROM DATABASE {self.database}")
         except mysql.connector.errors.ProgrammingError:
             print(f" ERROR: TABLE {table} NOT FOUND IN DATABASE {self.database}")
+        except mysql.connector.errors.DatabaseError as e:
+            print(f" ERROR: {str(e)[str(e).find(':')+1:]}")
         print()
 
     def insert(self, table: str, values: list[dict]):
@@ -130,12 +132,33 @@ class Pseudo:
                 print(f" DATA {value_query} ({','.join(headers)}) INSERTED INTO TABLE {table}")
 
         except mysql.connector.errors.IntegrityError:
-            print(f" ERROR: INTEGRITY ERROR DETECTED, POSSIBLE DUPLICATE ENTRY/INVALID COLUMN(S) FOR INPUT {value}")
+            print(f" ERROR: INTEGRITY ERROR DETECTED, POSSIBLE FOREIGN KEY/DUPLICATE ENTRY/INVALID COLUMN(S) FOR INPUT {value}")
         except KeyError:
             print(f" ERROR: INVALID COLUMN NAME(S) PROVIDED IN INPUT {value}")
         except mysql.connector.errors.ProgrammingError:
             print(f" ERROR: POSSIBLE SYNTAX ERROR, MAKE SURE TABLE NAME AND VALUES ARE CORRECT")
         print()
+
+    def delete(self, table: str, values: list[dict]):
+        """Deletes rows with matching values"""
+
+        try:
+            for value in values:
+                del_query_values = " AND ".join([f"{i} = '{j}'" if isinstance(j,str) 
+                                                else f"{i} = {j}" for i,j in value.items()])          
+
+                count_query = f"SELECT COUNT(*) FROM {table} WHERE {del_query_values};"
+                self.cursor.execute(count_query)
+                count = int(self.cursor.fetchall()[0][0])
+
+                del_query = f"DELETE FROM {table} WHERE {del_query_values};"
+                self.cursor.execute(del_query)
+                self.connection.commit()
+                print(f" {count} row(s) matching {del_query_values} deleted from table {table}")
+        except mysql.connector.errors.ProgrammingError:
+            print(" ERROR: INVALID PARAMETERS PASSED")
+        except mysql.connector.errors.IntegrityError as e:
+            print(f" ERROR: {str(e)[str(e).find(':')+1:]}")
 
     def get(self, table: str):
         """Shows the contents of a table in a database"""
@@ -166,7 +189,7 @@ class Pseudo:
 
         if self.cursor: self.cursor.close();
         if self.connection: self.connection.close();
-        print(" CONNECTION SUCCESSFULLY CLOSED")
+        print(f" CONNECTION FOR DATABASE {self.database} SUCCESSFULLY CLOSED")
 
 if __name__ == "__main__":
     #Creating a new object, which sets a connection to a specified database
@@ -200,6 +223,14 @@ if __name__ == "__main__":
     tester.insert('demo1',inval1) #Passing Non-Existent Table as parameter
 
     #Displaying Table
+    tester.get('demo')
+
+    #Deleting From Table
+    del_val = [{'name': 'GHI', 'id': 3}, {'name': 'GHI', 'id': 3}]
+    tester.delete('demo',del_val)
+
+    #Displaying Table After Deletion
+    print("\n After Deleting Values")
     tester.get('demo')
 
     #Dropping Table
