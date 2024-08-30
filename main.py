@@ -6,10 +6,10 @@ import mysql.connector
 import configparser
 
 class Pseudo:
-
-    # Use this constructor for config file input, remove if not to be used
-    def __init__(self, host:str = "localhost", port:int = 3306, user:str = "root", 
-                 password:str = "Password@123", database:str = "db", use_config = False):
+    
+    def __init__(self, use_config = False, host:str = "localhost", port:int = 3306,
+                 user:str = "root", password:str = "Password@123", database:str = "db"):
+        
         """
         Class for executing basic CRUD Operations by initializing a database 
         connection and cursor for CRUD operations
@@ -18,44 +18,36 @@ class Pseudo:
         
         To use config file, set use_config to True
         """
-        if use_config == True:
-            config = configparser.ConfigParser()
-            config.read("config.ini")
 
-            try:
-                self.database = config["mysql"]["database"]
+        try:
+            if use_config == True:
+                config = configparser.ConfigParser()
+                config.read('config.ini')
+                host = config['mysql']['host']
+                port = config['mysql']['port']
+                user = config['mysql']['user']
+                password = config['mysql']['password']
+                database = config['mysql']['database']
+        except KeyError:
+            raise Exception("ERROR: Check if your config file is named as 'config.ini', \
+                            and section under it is given as [mysql]")
 
-                self.connection = mysql.connector.connect(
-                        host = config["mysql"]["host"],
-                        port = config["mysql"]["port"],
-                        user = config["mysql"]["user"],
-                        password = config["mysql"]["password"],
-                        database = self.database
-                    )
+        self.database = database #Used in multiple functions 
 
-                print(f" SUCCESFULLY CONNECTED TO DATABASE {self.database}\n")
-                self.cursor = self.connection.cursor()
-
-            except KeyError:
-                raise Exception("ERROR: Check if your config file is named as 'config.ini', and section under it is given as [mysql]")
-            except mysql.connector.errors.ProgrammingError:
-                raise Exception("ERROR: INVALID PARAMETERS PROVIDED, Make Sure correct parameters are given")
-        else:
-            try:
-                self.database = database
-                
-                self.connection = mysql.connector.connect(
-                    host = host,
-                    port = port,
-                    user = user,
-                    password = password,
-                    database = self.database
-                )
-
-                print(f" SUCCESFULLY CONNECTED TO DATABASE {self.database}\n")
-                self.cursor = self.connection.cursor()
-            except mysql.connector.errors.ProgrammingError:
-                raise Exception("ERROR: INVALID PARAMETERS PROVIDED, Make Sure correct parameters are given")            
+        try:
+            self.connection = mysql.connector.connect(
+                host = host,
+                port = port,
+                user = user,
+                password = password,
+                database = self.database
+            )
+            print(f" SUCCESFULLY CONNECTED TO DATABASE {self.database}\n")
+            self.cursor = self.connection.cursor()
+        except mysql.connector.errors.ProgrammingError:
+            raise Exception("ERROR: INVALID PARAMETERS PROVIDED, Make Sure correct parameters are given")
+        except mysql.connector.errors.DatabaseError as e:
+            raise Exception(f" {str(e)[str(e).find(':')+1:]}")   
 
     def show_table_names(self):
         """Get all table names in given database"""
@@ -71,7 +63,8 @@ class Pseudo:
     def get_headers(self, table: str):
         """Get the Column Names of a given table in a database"""
 
-        query = f"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '{table}' ORDER BY ORDINAL_POSITION;"
+        query = f"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS \
+                WHERE TABLE_NAME = '{table}' ORDER BY ORDINAL_POSITION;"
         self.cursor.execute(query)
         result = [head for (head,) in self.cursor.fetchall()]
         headers = []
@@ -149,7 +142,7 @@ class Pseudo:
 
                 count_query = f"SELECT COUNT(*) FROM {table} WHERE {del_query_values};"
                 self.cursor.execute(count_query)
-                count = int(self.cursor.fetchall()[0][0])
+                count = self.cursor.fetchall()[0][0]
 
                 del_query = f"DELETE FROM {table} WHERE {del_query_values};"
                 self.cursor.execute(del_query)
@@ -226,7 +219,7 @@ if __name__ == "__main__":
     tester.get('demo')
 
     #Deleting From Table
-    del_val = [{'name': 'GHI', 'id': 3}, {'name': 'GHI', 'id': 3}]
+    del_val = [{'id': 3}, {'name': 'GHI', 'id': 3}]
     tester.delete('demo',del_val)
 
     #Displaying Table After Deletion
