@@ -105,7 +105,18 @@ class Pseudo:
         print()
 
     def insert(self, table: str, values: list[dict]):
-        """Inserts a set of values into given table"""
+        """Inserts a set of values into given table
+        
+        <b>Values Input Format</b> 
+        
+        <p>
+        [{column_name: value, column_name: value, ...},
+        {column_name: value, column_name: value, ...},....]
+        </p>
+
+        Example: (demo,[{"id": 1,"name": "ABC"},{"id":2,"name": "DEF"}])
+        Interpreted SQL: INSERT INTO demo (id,name) VALUES (1,"ABC"),(2,"DEF")
+        """
 
         try:
             headers = self.get_headers(table)
@@ -125,7 +136,8 @@ class Pseudo:
                 print(f" DATA {value_query} ({','.join(headers)}) INSERTED INTO TABLE {table}")
 
         except mysql.connector.errors.IntegrityError:
-            print(f" ERROR: INTEGRITY ERROR DETECTED, POSSIBLE FOREIGN KEY/DUPLICATE ENTRY/INVALID COLUMN(S) FOR INPUT {value}")
+            print(f" ERROR: INTEGRITY ERROR DETECTED, POSSIBLE FOREIGN KEY/DUPLICATE \
+                     ENTRY/INVALID COLUMN(S) FOR INPUT {value}")
         except KeyError:
             print(f" ERROR: INVALID COLUMN NAME(S) PROVIDED IN INPUT {value}")
         except mysql.connector.errors.ProgrammingError:
@@ -133,12 +145,34 @@ class Pseudo:
         print()
 
     def delete(self, table: str, values: list[dict]):
-        """Deletes rows with matching values"""
+        """Deletes rows with matching values
+        
+        <b>Values Input Format</b>
+        <p>
+        [{column_name: value_list,column_name: value,...},{column_name: value_list,column_name: value,...},...]
+        value_list format: tuple or list(conditional_operator,value)
+        If only value provided, operator is assumed to be =
+        </p>
+        
+        <p>Example: delete(demo,[{"id": ("<",3), "name": "ABC"},{"id":4}])</p>
+        <p>Interpreted SQL:<br>
+        DELETE FROM demo WHERE id < 3 AND name = "ABC"<br>
+        DELETE FROM demo WHERE id = 4</p>
+        """
 
         try:
             for value in values:
-                del_query_values = " AND ".join([f"{i} = '{j}'" if isinstance(j,str) 
-                                                else f"{i} = {j}" for i,j in value.items()])          
+                key_operator_map = {}
+                for key in value:
+                    if isinstance(value[key],list) or isinstance(value[key],tuple):
+                        key_operator_map[key] = value[key][0] #Assumes operator is in index 0
+                    else: key_operator_map[key] = "=" #Assumes by default 
+
+                #Need to add more verbosity
+                del_query_values = " AND ".join([
+                    f"{i} {key_operator_map[i]} '{j[1] if isinstance(j,(list,tuple)) else j}'" if isinstance(j,str) 
+                    else f"{i} {key_operator_map[i]} {j[1] if isinstance(j,(list,tuple)) else j}" 
+                    for i,j in value.items()])          
 
                 count_query = f"SELECT COUNT(*) FROM {table} WHERE {del_query_values};"
                 self.cursor.execute(count_query)
@@ -219,7 +253,7 @@ if __name__ == "__main__":
     tester.get('demo')
 
     #Deleting From Table
-    del_val = [{'id': 3}, {'name': 'GHI', 'id': 3}]
+    del_val = [{'id': ["<",3]}, {'name': 'GHI', 'id': ("<>",3)}]
     tester.delete('demo',del_val)
 
     #Displaying Table After Deletion
